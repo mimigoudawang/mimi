@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>查重报告</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .similarity-overview {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .similarity-rate {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .rate-high {
+            color: #dc3545;
+        }
+
+        .rate-medium {
+            color: #ffc107;
+        }
+
+        .rate-low {
+            color: #28a745;
+        }
+
+        .meta-info {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            color: white;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-download {
+            background-color: #28a745;
+        }
+
+        .btn-download:hover {
+            background-color: #218838;
+        }
+
+        .report-content {
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+
+        .paragraph {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            text-align: justify;
+            line-height: 1.6;
+        }
+
+        .similarity-info {
+            margin-top: 10px;
+            text-align: right;
+            color: #666;
+        }
+
+        .similarity-badge {
+            background-color: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        /* 新增样式 */
+        .comparison-block {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .user-text,
+        .template-text {
+            flex: 1;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            text-align: justify;
+            line-height: 1.6;
+            min-height: 50px;
+            /* 确保最小高度 */
+            overflow-wrap: break-word;
+            /* 防止长文本溢出 */
+            word-wrap: break-word;
+        }
+
+        .template-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .template-content {
+            flex: 1;
+            margin-bottom: 25px;
+        }
+
+        .source-info {
+            text-align: right;
+            padding-top: 5px;
+            border-top: 1px solid #eee;
+            font-size: 0.85em;
+            color: #666;
+            margin-top: auto;
+            /* 将出处信息推到底部 */
+        }
+
+        @media (max-width: 768px) {
+            .comparison-block {
+                flex-direction: column;
+            }
+
+            .user-text,
+            .template-text {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 报告主容器 -->
+    <div class="container">
+        <!-- 报告标题 -->
+        <h1>查重报告</h1>
+
+        <!-- 相似度概览区域：显示文件信息和相似度统计 -->
+        <div class="similarity-overview">
+            <!-- 文件基本信息 -->
+            <div class="meta-info">
+                <span>文件名：</span>
+                <span th:text="${report.documentName}"></span>
+            </div>
+            <div class="meta-info">
+                <span>生成时间：</span>
+                <span th:text="${#temporals.format(report.compareTime, 'yyyy-MM-dd HH:mm:ss')}"></span>
+            </div>
+            <!-- 相似度显示 -->
+            <div class="similarity-rate" th:classappend="${report.maxSimilarity >= 0.6 ? 'rate-high' : 
+                                (report.maxSimilarity >= 0.3 ? 'rate-medium' : 'rate-low')}"
+                th:text="${#numbers.formatDecimal(report.maxSimilarity * 100, 1, 2) + '%'}">
+            </div>
+            <div>文档相似度</div>
+        </div>
+
+        <!-- 操作按钮区域 -->
+        <div class="actions">
+            <a href="/user" class="btn btn-secondary">返回主页</a>
+        </div>
+
+        <!-- 详细报告内容 -->
+        <div class="report-content" th:utext="${report.reportContent}">
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>用户主页</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .logout-btn:hover {
+            background-color: #5a6268;
+        }
+
+        .upload-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .upload-form {
+            text-align: center;
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .upload-area.dragover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+
+        .upload-area input[type="file"] {
+            display: none;
+        }
+
+        .file-info {
+            margin-top: 10px;
+            color: #666;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            color: white;
+            margin-right: 5px;
+            display: inline-block;
+        }
+
+        .view-btn {
+            background-color: #17a2b8;
+        }
+
+        .view-btn:hover {
+            background-color: #138496;
+        }
+
+        .delete-btn {
+            background-color: #dc3545;
+        }
+
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .error p {
+            margin: 0;
+        }
+
+        .batch-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div th:if="${param.error}" class="alert error">
+            <p th:if="${param.error[0] == 'report_deleted'}">该报告已被管理员删除</p>
+            <p th:if="${param.error[0] == 'report'}">查看报告失败</p>
+            <p th:if="${param.error[0] == 'upload'}">上传失败</p>
+            <p th:if="${param.error[0] == 'empty'}">请选择文件</p>
+            <p th:if="${param.error[0] == 'type'}">不支持的文件类型</p>
+        </div>
+
+        <div class="header">
+            <h1>文档查重系统</h1>
+            <div class="header-actions" style="text-align: right; margin-bottom: 20px;">
+                <button onclick="showChangePasswordModal()" class="action-btn"
+                    style="background-color: #28a745; color: white;">修改密码</button>
+                <a href="/logout" class="action-btn" style="background-color: #6c757d; color: white;">退出登录</a>
+            </div>
+        </div>
+
+        <!-- 消息提示 -->
+        <div th:if="${param.success}" class="alert success">
+            <p>操作成功</p>
+        </div>
+        <div th:if="${param.error}" class="alert error">
+            <p th:text="${param.error[0] == 'type'} ? '只支持DOC/DOCX格式' : 
+                     (param.error[0] == 'empty' ? '请选择文件' :
+                     (param.error[0] == 'save' ? '文件保存失败' : '上传失败'))">
+            </p>
+        </div>
+
+        <!-- 文件上传 -->
+        <div class="upload-section">
+            <h2>文件上传</h2>
+            <form method="post" th:action="@{/upload}" enctype="multipart/form-data" class="upload-form">
+                <div class="upload-area" id="uploadArea">
+                    <i>📄</i>
+                    <p>点击或拖拽文件到此处上传</p>
+                    <p class="file-info">支持 .doc/.docx 格式</p>
+                    <input type="file" name="file" accept=".doc,.docx" id="fileInput" required>
+                </div>
+                <button type="submit" id="submitBtn">上传文档</button>
+            </form>
+        </div>
+
+        <!-- 文件列表 -->
+        <div>
+            <h2>我的文件</h2>
+            <div class="batch-actions">
+                <input type="checkbox" onclick="toggleSelectAll(this, 'reportItems')">
+                <label>全选</label>
+                <button onclick="batchDelete()" class="action-btn delete-btn">批量删除</button>
+            </div>
+            <table>
+                <tr>
+                    <th><input type="checkbox" onclick="toggleSelectAll(this, 'reportItems')"></th>
+                    <th>文件名</th>
+                    <th>上传时间</th>
+                    <th>操作</th>
+                </tr>
+                <tr th:each="doc : ${documents}">
+                    <td><input type="checkbox" name="reportItems" th:value="${doc.reportId}" th:if="${doc.hasReport}">
+                    </td>
+                    <td th:text="${doc.fileName}"></td>
+                    <td th:text="${#temporals.format(doc.uploadTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                    <td>
+                        <a th:if="${doc.hasReport}" th:href="@{/user/report/{id}(id=${doc.reportId})}"
+                            class="action-btn view-btn">查看报告</a>
+                        <button th:if="${doc.hasReport}" class="action-btn delete-btn"
+                            th:onclick="'deleteItem(' + ${doc.reportId} + ')'">删除</button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- 修改密码模态框 -->
+    <div id="passwordModal" class="modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000;">
+        <div class="modal-content"
+            style="background-color: white; margin: 15% auto; padding: 20px; width: 300px; border-radius: 5px;">
+            <h2>修改密码</h2>
+            <form id="changePasswordForm" onsubmit="return changePassword(event)">
+                <div style="margin-bottom: 15px;">
+                    <label>原密码：</label>
+                    <input type="password" name="oldPassword" required
+                        style="width: 100%; padding: 8px; margin-top: 5px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label>新密码：</label>
+                    <input type="password" name="newPassword" required
+                        style="width: 100%; padding: 8px; margin-top: 5px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label>确认新密码：</label>
+                    <input type="password" name="confirmPassword" required
+                        style="width: 100%; padding: 8px; margin-top: 5px;">
+                </div>
+                <div style="text-align: right;">
+                    <button type="button" onclick="closePasswordModal()" class="action-btn"
+                        style="background-color: #6c757d;">取消</button>
+                    <button type="submit" class="action-btn" style="background-color: #28a745;">确认修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const submitBtn = document.getElementById('submitBtn');
+            const fileInfo = document.querySelector('.file-info');
+
+            // 处理文件拖放
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                fileInput.files = e.dataTransfer.files;
+                if (fileInput.files.length > 0) {
+                    showFileName(fileInput.files[0].name);
+                }
+            });
+
+            uploadArea.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    showFileName(e.target.files[0].name);
+                }
+            });
+
+            function showFileName(name) {
+                const fileInfo = uploadArea.querySelector('.file-info');
+                fileInfo.textContent = `已选择: ${name}`;
+            }
+        });
+
+        function showChangePasswordModal() {
+            document.getElementById('passwordModal').style.display = 'block';
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').style.display = 'none';
+            document.getElementById('changePasswordForm').reset();
+        }
+
+        function changePassword(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+
+            if (formData.get('newPassword') !== formData.get('confirmPassword')) {
+                alert('两次输入的新密码不一致');
+                return false;
+            }
+
+            fetch('/user/change-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    oldPassword: formData.get('oldPassword'),
+                    newPassword: formData.get('newPassword')
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('密码修改成功');
+                        closePasswordModal();
+                    } else {
+                        alert(data.message || '密码修改失败');
+                    }
+                })
+                .catch(error => {
+                    alert('发生错误，请重试');
+                });
+
+            return false;
+        }
+
+        function toggleSelectAll(source, itemName) {
+            const checkboxes = document.getElementsByName(itemName);
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = source.checked;
+            });
+        }
+
+        function batchDelete() {
+            const checkboxes = document.querySelectorAll('input[name="reportItems"]:checked');
+            const selectedIds = Array.from(checkboxes).map(checkbox => parseInt(checkbox.value));
+
+            if (selectedIds.length === 0) {
+                alert('请选择要删除的报告');
+                return;
+            }
+
+            if (confirm(`确定要删除选中的 ${selectedIds.length} 个报告吗？`)) {
+                fetch('/user/reports/batch-delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(selectedIds)
+                }).then(async response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        const errorText = await response.text();
+                        alert('删除失败: ' + errorText);
+                    }
+                }).catch(error => {
+                    console.error('Delete error:', error);
+                    alert('删除失败: ' + error.message);
+                });
+            }
+        }
+
+        function deleteItem(id) {
+            if (confirm('确定要删除这份报告吗？')) {
+                fetch(`/user/delete/${id}`, {
+                    method: 'POST'
+                }).then(async response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        const errorText = await response.text();
+                        alert('删除失败: ' + errorText);
+                    }
+                }).catch(error => {
+                    console.error('Delete error:', error);
+                    alert('删除失败: ' + error.message);
+                });
+            }
+        }
+    </script>
+</body>
+
+</html>
